@@ -19,7 +19,7 @@ node('master') {
     // inside this block your credentials will be available as env variables
     withVault([configuration: configuration, vaultSecrets: secrets]) {
         sh 'echo $vault_secret'
-        sh 'git -$vault_secret'
+        sh 'git --$vault_secret'
     }
         
     }
