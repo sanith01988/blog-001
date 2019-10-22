@@ -5,17 +5,22 @@ node('master') {
         checkout scm
     }
     
-    stage('Run tests') {
-        try {
-            withMaven(maven: 'Maven 3') {
-                dir('bobcat') {
-                    sh 'mvn clean test -Dwebdriver.type=remote -Dwebdriver.url=http://localhost:4444/wd/hub -Dwebdriver.cap.browserName=chrome -Dmaven.test.failure.ignore=true'
-                    sh 'jenkins-shared-library -h'
-                }
-            }
-        } finally {
-            junit testResults: 'bobcat/target/*.xml', allowEmptyResults: true
-            archiveArtifacts 'bobcat/target/**'
-        }
+    stage('VAULT Connection Check') {
+     def secrets = [
+        [path: 'kv/campaign', engineVersion: 2, secretValues: [
+            [envVar: 'vault_secret', vaultKey: 'campaign_user']]]
+    ]
+
+    // optional configuration, if you do not provide this the next higher configuration
+    // (e.g. folder or global) will be used
+    def configuration = [vaultUrl: 'http://ac-vault:8200',
+                         vaultCredentialId: 'vault-id',
+                         engineVersion: 2]
+    // inside this block your credentials will be available as env variables
+    withVault([configuration: configuration, vaultSecrets: secrets]) {
+        sh 'echo $vault_secret'
+        sh 'git -$vault_secret'
+    }
+        
     }
 }
